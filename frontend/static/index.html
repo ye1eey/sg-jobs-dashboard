@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SG Jobs — Analyst & Biz Dev Dashboard</title>
+<style>
+  :root{
+    --bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--border:#2e3347;
+    --text:#e8eaf0;--muted:#7b82a0;--accent:#1db87a;--accent2:#2563eb;
+    --red:#e53e3e;--amber:#d97706;--radius:10px;--font:'Inter',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh}
+  a{color:inherit;text-decoration:none}
+  /* Layout */
+  .app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+  .sidebar{background:var(--surface);border-right:1px solid var(--border);padding:1.5rem 1rem;display:flex;flex-direction:column;gap:8px;position:sticky;top:0;height:100vh;overflow-y:auto}
+  .main{padding:1.5rem 2rem;overflow-y:auto}
+  /* Sidebar */
+  .logo{font-size:16px;font-weight:700;color:var(--accent);padding:0 8px 1rem;border-bottom:1px solid var(--border);margin-bottom:8px;letter-spacing:-0.3px}
+  .logo span{color:var(--muted);font-weight:400;font-size:12px;display:block;margin-top:2px}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;font-size:13px;cursor:pointer;color:var(--muted);transition:all 0.15s}
+  .nav-item:hover,.nav-item.active{background:var(--surface2);color:var(--text)}
+  .nav-item.active{color:var(--accent)}
+  .nav-icon{width:16px;text-align:center}
+  .nav-count{margin-left:auto;background:var(--surface2);border-radius:10px;padding:1px 7px;font-size:11px}
+  .nav-section{font-size:10px;color:var(--muted);padding:12px 10px 4px;text-transform:uppercase;letter-spacing:0.8px}
+  /* Top bar */
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;gap:12px;flex-wrap:wrap}
+  .topbar h1{font-size:20px;font-weight:600}
+  .topbar-right{display:flex;align-items:center;gap:10px}
+  .last-scraped{font-size:12px;color:var(--muted)}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);display:inline-block;margin-right:5px;animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+  /* Stat cards */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
+  .stat-n{font-size:26px;font-weight:700;letter-spacing:-1px}
+  .stat-l{font-size:12px;color:var(--muted);margin-top:2px}
+  /* Portals */
+  .portals{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.5rem}
+  .portal{display:flex;align-items:center;gap:10px;padding:11px 14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);cursor:pointer;transition:border-color 0.15s}
+  .portal:hover{border-color:var(--accent)}
+  .portal-icon{width:30px;height:30px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+  .portal-name{font-size:13px;font-weight:500}
+  .portal-desc{font-size:11px;color:var(--muted)}
+  /* Search + filters */
+  .search-row{display:flex;gap:10px;margin-bottom:12px;align-items:center}
+  .search-input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 14px;color:var(--text);font-size:13px;outline:none;font-family:var(--font)}
+  .search-input:focus{border-color:var(--accent)}
+  .btn{padding:8px 14px;border-radius:8px;font-size:13px;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:var(--font);transition:all 0.15s}
+  .btn:hover{border-color:var(--accent);color:var(--accent)}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#000;font-weight:600}
+  .btn.primary:hover{background:#17a368;color:#000}
+  .pills{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap}
+  .pill{padding:5px 12px;border:1px solid var(--border);border-radius:20px;font-size:12px;cursor:pointer;color:var(--muted);transition:all 0.15s;background:transparent}
+  .pill:hover{border-color:var(--text);color:var(--text)}
+  .pill.active{border-color:var(--accent);color:var(--accent);background:rgba(29,184,122,0.1)}
+  /* Job cards */
+  .job-list{display:flex;flex-direction:column;gap:8px}
+  .job-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;transition:border-color 0.15s;cursor:default}
+  .job-card:hover{border-color:#3e4560}
+  .job-card.saved{border-left:3px solid var(--accent)}
+  .job-card.applied{opacity:0.65}
+  .job-header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+  .job-title{font-size:14px;font-weight:600;color:var(--text)}
+  .job-co{font-size:12px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:6px}
+  .source-badge{font-size:10px;padding:1px 6px;border-radius:4px;font-weight:600}
+  .job-tags{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+  .tag{font-size:11px;padding:2px 8px;border-radius:12px;background:var(--surface2);color:var(--muted)}
+  .tag.new{background:rgba(29,184,122,0.15);color:var(--accent)}
+  .tag.type{background:rgba(37,99,235,0.15);color:#60a5fa}
+  .job-footer{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
+  .job-salary{font-size:12px;color:var(--muted)}
+  .job-actions{display:flex;gap:6px}
+  .btn-xs{padding:4px 10px;font-size:11px;border:1px solid var(--border);border-radius:6px;cursor:pointer;background:transparent;color:var(--muted);font-family:var(--font);transition:all 0.15s}
+  .btn-xs:hover{color:var(--text);border-color:var(--text)}
+  .btn-xs.active{background:var(--accent);border-color:var(--accent);color:#000;font-weight:600}
+  /* Loading / empty */
+  .loading{text-align:center;padding:3rem;color:var(--muted);font-size:13px}
+  .spinner{display:inline-block;width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:-4px;margin-right:8px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .empty{text-align:center;padding:3rem;color:var(--muted);font-size:13px;border:1px dashed var(--border);border-radius:var(--radius)}
+  /* AI panel */
+  .ai-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:1.5rem}
+  .ai-head{font-size:13px;font-weight:600;color:var(--accent);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+  .ai-result{font-size:13px;color:var(--text);line-height:1.7;white-space:pre-wrap;min-height:48px}
+  .ai-row{display:flex;gap:8px;margin-top:10px}
+  .ai-row input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text);font-size:13px;outline:none;font-family:var(--font)}
+  .ai-row input:focus{border-color:var(--accent)}
+  /* Responsive */
+  @media(max-width:768px){
+    .app{grid-template-columns:1fr}
+    .sidebar{display:none}
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .portals{grid-template-columns:repeat(2,1fr)}
+  }
+  .scrape-status{font-size:11px;color:var(--muted);text-align:center;padding-top:1rem;margin-top:auto;border-top:1px solid var(--border)}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">SG Jobs <span>Analyst · Biz Dev</span></div>
+    <div class="nav-section">View</div>
+    <div class="nav-item active" onclick="setView('all',this)"><span class="nav-icon">📋</span>All Jobs<span class="nav-count" id="nc-all">—</span></div>
+    <div class="nav-item" onclick="setView('saved',this)"><span class="nav-icon">⭐</span>Saved<span class="nav-count" id="nc-saved">0</span></div>
+    <div class="nav-item" onclick="setView('applied',this)"><span class="nav-icon">✅</span>Applied<span class="nav-count" id="nc-applied">0</span></div>
+    <div class="nav-section">Sources</div>
+    <div class="nav-item" onclick="setSource('',this)" id="src-all"><span class="nav-icon">🌐</span>All sources</div>
+    <div class="nav-item" onclick="setSource('MyCareersFuture',this)"><span class="nav-icon" style="color:#c0392b">●</span>MyCareersFuture</div>
+    <div class="nav-item" onclick="setSource('Indeed SG',this)"><span class="nav-icon" style="color:#003A9B">●</span>Indeed SG</div>
+    <div class="nav-section">Quick links</div>
+    <a class="nav-item" href="https://www.linkedin.com/jobs/search/?keywords=analyst+business+development&location=Singapore&f_TPR=r86400" target="_blank"><span class="nav-icon">in</span>LinkedIn SG ↗</a>
+    <a class="nav-item" href="https://www.glassdoor.com/Job/singapore-analyst-jobs-SRCH_IL.0,9_IC3235921_KO10,17.htm" target="_blank"><span class="nav-icon">GD</span>Glassdoor ↗</a>
+    <a class="nav-item" href="https://www.jobstreet.com.sg/jobs/analyst-business-development-jobs" target="_blank"><span class="nav-icon">JS</span>JobStreet ↗</a>
+    <div class="scrape-status" id="scrape-status">Auto-refreshes every 30 min</div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1>Job Dashboard</h1>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px"><span class="dot"></span><span id="last-scraped-txt">Loading...</span></div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn primary" onclick="triggerScrape()">⟳ Refresh now</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat"><div class="stat-n" id="s-total">—</div><div class="stat-l">Total jobs</div></div>
+      <div class="stat"><div class="stat-n" id="s-new">—</div><div class="stat-l">New today</div></div>
+      <div class="stat"><div class="stat-n" id="s-saved">0</div><div class="stat-l">Saved</div></div>
+      <div class="stat"><div class="stat-n" id="s-applied">0</div><div class="stat-l">Applied</div></div>
+    </div>
+
+    <!-- Portal links -->
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.8px">Browse portals directly</div>
+    <div class="portals" style="margin-bottom:1.5rem">
+      <a class="portal" href="https://www.linkedin.com/jobs/search/?keywords=analyst+business+development&location=Singapore&f_TPR=r86400&sortBy=R" target="_blank">
+        <div class="portal-icon" style="background:#0077b5">in</div>
+        <div><div class="portal-name">LinkedIn</div><div class="portal-desc">Last 24h · SG</div></div>
+      </a>
+      <a class="portal" href="https://www.glassdoor.com/Job/singapore-business-development-analyst-jobs-SRCH_IL.0,9_IC3235921_KO10,38.htm" target="_blank">
+        <div class="portal-icon" style="background:#0CAA41">GD</div>
+        <div><div class="portal-name">Glassdoor</div><div class="portal-desc">Singapore roles</div></div>
+      </a>
+      <a class="portal" href="https://www.jobstreet.com.sg/jobs/analyst-jobs?createdAt=last3Days" target="_blank">
+        <div class="portal-icon" style="background:#FF6600">JS</div>
+        <div><div class="portal-name">JobStreet</div><div class="portal-desc">Past 3 days</div></div>
+      </a>
+      <a class="portal" href="https://sg.indeed.com/jobs?q=analyst+business+development&l=Singapore&sort=date&fromage=3" target="_blank">
+        <div class="portal-icon" style="background:#003A9B">ID</div>
+        <div><div class="portal-name">Indeed SG</div><div class="portal-desc">Past 3 days</div></div>
+      </a>
+      <a class="portal" href="https://www.mycareersfuture.gov.sg/search?search=analyst&sortBy=new_posting_date" target="_blank">
+        <div class="portal-icon" style="background:#c0392b">MCF</div>
+        <div><div class="portal-name">MyCareersFuture</div><div class="portal-desc">Gov portal · live</div></div>
+      </a>
+      <a class="portal" href="https://nodeflair.com/jobs?query=analyst&country=Singapore" target="_blank">
+        <div class="portal-icon" style="background:#7F77DD">NF</div>
+        <div><div class="portal-name">NodeFlair</div><div class="portal-desc">Tech analyst roles</div></div>
+      </a>
+    </div>
+
+    <!-- Search & filters -->
+    <div class="search-row">
+      <input class="search-input" id="search-inp" placeholder="Search title, company..." oninput="debounceLoad()"/>
+      <select id="sort-sel" onchange="loadJobs()" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--font);outline:none">
+        <option value="new">Newest first</option>
+        <option value="salary">Salary ↑</option>
+      </select>
+    </div>
+    <div class="pills" id="cat-pills">
+      <span class="pill active" onclick="setCat('',this)">All</span>
+      <span class="pill" onclick="setCat('Analyst',this)">Analyst</span>
+      <span class="pill" onclick="setCat('Business Development',this)">Biz Dev</span>
+      <span class="pill" onclick="setCat('Data',this)">Data</span>
+      <span class="pill" onclick="setCat('Finance',this)">Finance</span>
+      <span class="pill" onclick="setCat('Operations',this)">Operations</span>
+    </div>
+
+    <!-- Job list -->
+    <div class="job-list" id="job-list">
+      <div class="loading"><span class="spinner"></span>Connecting to backend...</div>
+    </div>
+
+    <!-- AI panel -->
+    <div class="ai-panel">
+      <div class="ai-head">✦ AI match analysis</div>
+      <div class="ai-result" id="ai-result" style="color:var(--muted)">Click "Analyse" on any job, or paste a description below.</div>
+      <div class="ai-row">
+        <input type="text" id="ai-jd" placeholder="Paste job title or description snippet..."/>
+        <button class="btn primary" onclick="analyseManual()">Analyse ↗</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+// ── Config ────────────────────────────────────────────────────────────────
+// In production this is the same origin. For local dev, set to http://localhost:8000
+const API = window.location.hostname === 'localhost' ? 'http://localhost:8000' : '';
+
+let currentView = 'all';
+let currentSource = '';
+let currentCat = '';
+let debounceTimer;
+
+// ── Init ──────────────────────────────────────────────────────────────────
+window.onload = () => { loadStats(); loadJobs(); setInterval(()=>{loadStats();loadJobs();}, 60000); };
+
+// ── Stats ─────────────────────────────────────────────────────────────────
+async function loadStats(){
+  try{
+    const r = await fetch(`${API}/api/stats`);
+    const d = await r.json();
+    document.getElementById('s-total').textContent = d.total;
+    document.getElementById('s-new').textContent = d.new_today;
+    document.getElementById('s-saved').textContent = d.saved;
+    document.getElementById('s-applied').textContent = d.applied;
+    document.getElementById('nc-all').textContent = d.total;
+    document.getElementById('nc-saved').textContent = d.saved;
+    document.getElementById('nc-applied').textContent = d.applied;
+    const ls = d.last_scraped ? new Date(d.last_scraped) : null;
+    document.getElementById('last-scraped-txt').textContent = ls
+      ? `Last scraped ${timeSince(ls)}` : 'Scraping...';
+  } catch(e){ document.getElementById('last-scraped-txt').textContent = 'Could not reach backend'; }
+}
+
+// ── Jobs ──────────────────────────────────────────────────────────────────
+async function loadJobs(){
+  const q = document.getElementById('search-inp').value;
+  const sort = document.getElementById('sort-sel').value;
+  const params = new URLSearchParams({ q, sort, source: currentSource, category: currentCat });
+  if(currentView === 'saved') params.set('saved','true');
+  if(currentView === 'applied') params.set('applied','true');
+  try{
+    const r = await fetch(`${API}/api/jobs?${params}`);
+    const d = await r.json();
+    renderJobs(d.jobs);
+  } catch(e){
+    document.getElementById('job-list').innerHTML = `<div class="empty">Cannot reach backend at ${API}.<br>Make sure the server is running.</div>`;
+  }
+}
+
+function debounceLoad(){ clearTimeout(debounceTimer); debounceTimer = setTimeout(loadJobs, 300); }
+
+function renderJobs(jobs){
+  if(!jobs.length){
+    document.getElementById('job-list').innerHTML = '<div class="empty">No jobs found for this filter.</div>';
+    return;
+  }
+  document.getElementById('job-list').innerHTML = jobs.map(jobCard).join('');
+}
+
+function jobCard(j){
+  const id = j.id;
+  const salary = j.salary_max ? `S$${(j.salary_min||0).toLocaleString()} – S$${j.salary_max.toLocaleString()}/mo` : 'Salary not stated';
+  const posted = j.posted_at ? timeSince(new Date(j.posted_at)) : 'recently';
+  const isNew = posted.includes('h ago') || posted.includes('m ago');
+  const cats = (j.categories||[]).slice(0,2).map(c=>`<span class="tag">${c}</span>`).join('');
+  const srcColor = j.source_color || '#888';
+  return `<div class="job-card${j.saved?' saved':''}${j.applied?' applied':''}" id="jc-${id}">
+    <div class="job-header">
+      <div style="flex:1">
+        <div class="job-title">${j.title}</div>
+        <div class="job-co">
+          <span class="source-badge" style="background:${srcColor}22;color:${srcColor}">${j.source}</span>
+          ${j.company}
+        </div>
+      </div>
+    </div>
+    <div class="job-tags">
+      ${isNew?'<span class="tag new">New</span>':''}
+      ${j.employment_type?`<span class="tag type">${j.employment_type}</span>`:''}
+      ${cats}
+      <span class="tag">${posted}</span>
+    </div>
+    <div class="job-footer">
+      <div class="job-salary">${salary}</div>
+      <div class="job-actions">
+        <button class="btn-xs" onclick="aiAnalyse('${id}','${j.title.replace(/'/g,"\\'")}','${j.company.replace(/'/g,"\\'")}')">Analyse</button>
+        <button class="btn-xs${j.saved?' active':''}" onclick="toggleSave('${id}')">${j.saved?'★ Saved':'☆ Save'}</button>
+        <a class="btn-xs${j.applied?' active':''}" href="${j.url}" target="_blank" onclick="markApplied('${id}')">${j.applied?'✓ Applied':'Apply ↗'}</a>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── Actions ───────────────────────────────────────────────────────────────
+async function toggleSave(id){
+  await fetch(`${API}/api/jobs/${id}/save`, {method:'POST'});
+  loadStats(); loadJobs();
+}
+async function markApplied(id){
+  await fetch(`${API}/api/jobs/${id}/apply`, {method:'POST'});
+  loadStats();
+}
+async function triggerScrape(){
+  const btn = event.target;
+  btn.textContent = '⟳ Scraping...'; btn.disabled = true;
+  await fetch(`${API}/api/scrape`, {method:'POST'});
+  setTimeout(()=>{ loadStats(); loadJobs(); btn.textContent='⟳ Refresh now'; btn.disabled=false; }, 8000);
+}
+
+// ── Filters ───────────────────────────────────────────────────────────────
+function setView(v, el){
+  currentView=v;
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el.classList.add('active'); loadJobs();
+}
+function setSource(s, el){
+  currentSource=s;
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el.classList.add('active'); loadJobs();
+}
+function setCat(c, el){
+  currentCat=c;
+  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active'); loadJobs();
+}
+
+// ── AI ────────────────────────────────────────────────────────────────────
+async function aiAnalyse(id, title, company){
+  const panel = document.getElementById('ai-result');
+  panel.innerHTML='<span class="spinner"></span> Analysing...';
+  const prompt = `You are a career advisor. Singapore job seeker targeting Analyst or Business Development roles.\nJob: "${title}" at ${company}\nGive: Match score (0-100), 2-3 key skills to highlight, one application tip.\nFormat strictly:\nMatch: XX/100 | [reason]\nHighlight: [skills]\nTip: [one sentence]`;
+  try{
+    const r = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:300,messages:[{role:'user',content:prompt}]})
+    });
+    const d = await r.json();
+    panel.textContent = (d.content?.[0]?.text)||'Could not analyse.';
+  } catch(e){ panel.textContent='AI analysis unavailable.'; }
+}
+async function analyseManual(){
+  const jd = document.getElementById('ai-jd').value.trim();
+  if(!jd) return;
+  const panel = document.getElementById('ai-result');
+  panel.innerHTML='<span class="spinner"></span> Analysing...';
+  const prompt=`Career advisor for Singapore Analyst/Biz Dev job seeker.\nJob/description: "${jd}"\nGive match score, skills to highlight, and one application tip.\nFormat:\nMatch: XX/100 | [reason]\nHighlight: [skills]\nTip: [sentence]`;
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:300,messages:[{role:'user',content:prompt}]})
+    });
+    const d=await r.json();
+    panel.textContent=d.content?.[0]?.text||'Could not analyse.';
+  } catch(e){ panel.textContent='AI analysis unavailable.'; }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+function timeSince(d){
+  const s=Math.floor((Date.now()-d)/1000);
+  if(s<60) return 'just now';
+  if(s<3600) return `${Math.floor(s/60)}m ago`;
+  if(s<86400) return `${Math.floor(s/3600)}h ago`;
+  return `${Math.floor(s/86400)}d ago`;
+}
+</script>
+</body>
+</html>
